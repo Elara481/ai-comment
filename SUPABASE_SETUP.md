@@ -37,6 +37,19 @@ CREATE TABLE IF NOT EXISTS square_replies (
 ALTER TABLE square_replies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read square_replies" ON square_replies FOR SELECT USING (true);
 CREATE POLICY "Allow public insert square_replies" ON square_replies FOR INSERT WITH CHECK (true);
+
+-- 3. 创建 contacts（用户反馈/お問い合わせ表）
+CREATE TABLE IF NOT EXISTS contacts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public insert contacts" ON contacts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public read contacts" ON contacts FOR SELECT USING (true);
 ```
 
 ---

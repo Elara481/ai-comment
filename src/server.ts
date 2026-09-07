@@ -280,15 +280,28 @@ app.post('/api/square/like', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/contact', (req: Request, res: Response) => {
+app.post('/api/contact', async (req: Request, res: Response) => {
   const { name, email, message } = req.body;
 
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'すべての項目を入力してください。' });
   }
 
-  // 実際の送信処理はここに実装（今回はログ出力のみ）
-  console.log('お問い合わせ受信:', { name, email, message });
+  console.log('📬 お問い合わせ受信:', { name, email, message });
+
+  try {
+    if (supabase) {
+      const { error } = await supabase
+        .from('contacts')
+        .insert([{ name, email, message }]);
+
+      if (error) {
+        console.error('Supabase contact insert error:', error);
+      }
+    }
+  } catch (err) {
+    console.error('Save contact error:', err);
+  }
 
   res.json({ success: true, message: 'お問い合わせを受け付けました。' });
 });

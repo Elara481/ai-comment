@@ -40,41 +40,45 @@ export async function generateAIComment(
     return generateRuleComment(input, mode, lang);
   }
 
-  try {
-    // 优先尝试 gemini-1.5-flash / gemini-2.0-flash
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const candidateModels = [
+    'gemini-3.6-flash',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
+  ];
 
-    const systemPrompt = lang === 'zh'
-      ? (promptsZh[mode] || promptsZh['毒舌AI'])
-      : (promptsJa[mode] || promptsJa['毒舌AI']);
+  const systemPrompt = lang === 'zh'
+    ? (promptsZh[mode] || promptsZh['毒舌AI'])
+    : (promptsJa[mode] || promptsJa['毒舌AI']);
 
-    const userPrompt = lang === 'zh'
-      ? `用户今日输入内容：“${input}”\n请以设定角色给出一针见血的短评：`
-      : `ユーザーの本日の出来事：「${input}」\n設定された役割として的確なコメントを生成してください：`;
+  const userPrompt = lang === 'zh'
+    ? `用户今日输入内容：“${input}”\n请以设定角色给出一针见血的短评：`
+    : `ユーザーの本日の出来事：「${input}」\n設定された役割として的確なコメントを生成してください：`;
 
-    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text().trim();
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      const text = response.text().trim();
 
-    if (!text) {
-      console.warn('Gemini returned empty response. Fallback to rule engine.');
-      return generateRuleComment(input, mode, lang);
+      if (text) {
+        console.log(`✨ [Real AI Generated via ${modelName}] Mode: ${mode}, Content: ${text.substring(0, 30)}...`);
+        const baseResult = generateRuleComment(input, mode, lang);
+        return {
+          comment: text,
+          rating: baseResult.rating,
+          mode: mode
+        };
+      }
+    } catch (err: any) {
+      // 尝试下一个候选模型
+      continue;
     }
-
-    console.log(`✨ [Real AI Generated] Mode: ${mode}, Length: ${text.length}`);
-
-    // 基础星级根据本地规则计算
-    const baseResult = generateRuleComment(input, mode, lang);
-
-    return {
-      comment: text,
-      rating: baseResult.rating,
-      mode: mode
-    };
-  } catch (error: any) {
-    console.error('❌ Gemini API call failed, falling back to rule engine:', error?.message || error);
-    return generateRuleComment(input, mode, lang);
   }
+
+  console.warn('⚠️ All Gemini model candidates failed. Fallback to rule engine.');
+  return generateRuleComment(input, mode, lang);
 }

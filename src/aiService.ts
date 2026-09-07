@@ -40,45 +40,52 @@ export async function generateAIComment(
     return generateRuleComment(input, mode, lang);
   }
 
-  const candidateModels = [
-    'gemini-3.6-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
-  ];
-
   const systemPrompt = lang === 'zh'
     ? (promptsZh[mode] || promptsZh['毒舌AI'])
     : (promptsJa[mode] || promptsJa['毒舌AI']);
 
   const userPrompt = lang === 'zh'
-    ? `用户今日输入内容：“${input}”\n请以设定角色给出一针见血的短评：`
-    : `ユーザーの本日の出来事：「${input}」\n設定された役割として的確なコメントを生成してください：`;
+    ? `今日输入：“${input}”。请用60-100字输出简短精辟短评：`
+    : `本日の入力：「${input}」。60〜100文字で簡潔かつ的確なコメントを出力してください：`;
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-  for (const modelName of candidateModels) {
+  // 1. 设置极速超时期：若大模型网络延迟超过 3.5 秒，立即无缝返回本地规则，绝不让用户卡顿等待
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), 3500);
+  });
+
+  // 2. 直连已验证可用的极速模型 gemini-3.6-flash，削减冗余轮询开销
+  const aiPromise = (async (): Promise<string | null> => {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI!.getGenerativeModel({
+        model: 'gemini-3.6-flash',
+        generationConfig: {
+          maxOutputTokens: 100, // 进一步缩减至 100 tokens（精炼短评，极速出字）
+          temperature: 0.75,
+        }
+      });
       const result = await model.generateContent(fullPrompt);
       const response = await result.response;
-      const text = response.text().trim();
-
-      if (text) {
-        console.log(`✨ [Real AI Generated via ${modelName}] Mode: ${mode}, Content: ${text.substring(0, 30)}...`);
-        const baseResult = generateRuleComment(input, mode, lang);
-        return {
-          comment: text,
-          rating: baseResult.rating,
-          mode: mode
-        };
-      }
-    } catch (err: any) {
-      // 尝试下一个候选模型
-      continue;
+      return response.text().trim() || null;
+    } catch (e) {
+      return null;
     }
+  })();
+
+  const text = await Promise.race([aiPromise, timeoutPromise]);
+
+  const baseResult = generateRuleComment(input, mode, lang);
+
+  if (text) {
+    console.log(`⚡ [Fast AI Generated] Mode: ${mode}`);
+    return {
+      comment: text,
+      rating: baseResult.rating,
+      mode: mode
+    };
   }
 
-  console.warn('⚠️ All Gemini model candidates failed. Fallback to rule engine.');
-  return generateRuleComment(input, mode, lang);
+  console.warn('⚡ Fallback to instant local rule engine for speed.');
+  return baseResult;
 }

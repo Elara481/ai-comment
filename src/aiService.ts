@@ -50,7 +50,7 @@ export async function generateAIComment(
 
   try {
     const model = genAI!.getGenerativeModel({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: systemInstruction, // 使用官方规范的 systemInstruction 隔离系统人设
       generationConfig: {
         maxOutputTokens: 600,
@@ -74,8 +74,9 @@ export async function generateAIComment(
     }
 
     // 剔除末尾可能附带的英文检查项列表（如 * *No internal thought...*）
+    // 只匹配纯英文行开头的列表项，避免误截中文正文
     text = text.split(/\n\s*[\*\-]\s+\*[A-Za-z]/)[0].trim();
-    text = text.split(/\n\s*[\*\-]\s+[A-Z][a-z]+/)[0].trim();
+    text = text.split(/\n\s*[\*\-]\s+[A-Z][a-z]+(?: [A-Za-z]+)*\s*$/m)[0].trim();
 
     if (text) {
       console.log(`🧠 [Gemini LLM Clean Output] Mode: ${mode}, Length: ${text.length}`);

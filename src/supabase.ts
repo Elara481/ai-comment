@@ -26,15 +26,17 @@ export interface ReplyItem {
   created_at: string;
 }
 
-// 内存后备存储（若用户未配置 Supabase 环境变量，依然可正常体验广场）
+// 广场帖子：社畜工作评价/吐槽
 export interface FeedItem {
   id: string;
-  input: string;
-  mode: string;
-  comment: string;
-  rating: number;
-  user_rating?: number;
-  user_custom_answer?: string;
+  author_name?: string; // 发布者昵称（可选，默认匿名社畜）
+  job_type?: string;     // 岗位/职业（如：程序员、运营、销售、设计、人事...）
+  content: string;       // 对工作的评价/真实想法/吐槽
+  work_rating?: number;  // 对自己这份工作/今日工作的打分（1~5星）
+  input?: string;        // 兼容旧字段
+  mode?: string;
+  comment?: string;
+  rating?: number;
   likes?: number;
   replies?: ReplyItem[];
   created_at: string;

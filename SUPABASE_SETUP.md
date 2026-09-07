@@ -1,54 +1,42 @@
 # Supabase 数据库建表与配置指南
 
-本项目已支持将所有用户的吐槽评论、AI评价、用户反驳打分与点赞持久化到 **Supabase（免费 PostgreSQL 云数据库）**。
+本项目支持将「社畜广场」的工作评价、匿名吐槽以及其他人的匿名评论回复持久化到 **Supabase（免费 PostgreSQL 云数据库）**。
 
 ---
 
-## 1. 注册与创建 Supabase 项目
-
-1. 前往 [Supabase 官网 (supabase.com)](https://supabase.com/) 并注册/登录账号。
-2. 点击 **New Project** 创建一个新项目，设置名称（例如 `ai-comment`）和数据库密码。
-
----
-
-## 2. 在 Supabase 中执行 SQL 建表
+## 在 Supabase 中执行 SQL 建表
 
 在 Supabase 控制台左侧菜单点击 **SQL Editor**，新建一个查询，粘贴以下 SQL 语句并点击 **Run** 运行：
 
 ```sql
--- 创建 comments 表
-CREATE TABLE IF NOT EXISTS comments (
+-- 1. 创建 square_posts（社畜广场工作评价与心声表）
+CREATE TABLE IF NOT EXISTS square_posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  input TEXT NOT NULL,
-  mode VARCHAR(50) NOT NULL,
-  comment TEXT NOT NULL,
-  rating INTEGER DEFAULT 3,
-  user_rating INTEGER DEFAULT 0,
-  user_custom_answer TEXT DEFAULT '',
+  author_name VARCHAR(50) DEFAULT '匿名社畜',
+  job_type VARCHAR(50) DEFAULT '社畜',
+  content TEXT NOT NULL,
+  work_rating INTEGER DEFAULT 3,
   likes INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 开启行级安全策略（RLS）或者允许所有人读写
-ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE square_posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read square_posts" ON square_posts FOR SELECT USING (true);
+CREATE POLICY "Allow public insert square_posts" ON square_posts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update square_posts" ON square_posts FOR UPDATE USING (true);
 
--- 允许匿名读取和插入、更新
-CREATE POLICY "Allow public read" ON comments FOR SELECT USING (true);
-CREATE POLICY "Allow public insert" ON comments FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update" ON comments FOR UPDATE USING (true);
-
--- 创建 replies（匿名盖楼回复表）
-CREATE TABLE IF NOT EXISTS replies (
+-- 2. 创建 square_replies（他人匿名评价/跟帖互动表）
+CREATE TABLE IF NOT EXISTS square_replies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  post_id UUID REFERENCES square_posts(id) ON DELETE CASCADE,
   nickname VARCHAR(50) DEFAULT '匿名社畜',
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE replies ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read replies" ON replies FOR SELECT USING (true);
-CREATE POLICY "Allow public insert replies" ON replies FOR INSERT WITH CHECK (true);
+ALTER TABLE square_replies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read square_replies" ON square_replies FOR SELECT USING (true);
+CREATE POLICY "Allow public insert square_replies" ON square_replies FOR INSERT WITH CHECK (true);
 ```
 
 ---

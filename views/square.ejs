@@ -27,22 +27,50 @@
     <main>
       <div class="hero">
         <h1 class="title" id="squarePageTitle">社畜広場 🏢</h1>
-        <p class="subtitle" id="squarePageSubtitle">みんなの日常とAIの容赦ない評価・魂の反論をのぞいてみよう！</p>
+        <p class="subtitle" id="squarePageSubtitle">社畜たちによる仕事の本音・評価の共有スペース。誰でも匿名でコメント・共感できます！</p>
+      </div>
+
+      <!-- 发布我的工作心声/评价卡片 -->
+      <div class="square-post-card">
+        <h3 class="square-post-title" id="squarePublishTitle">自分の仕事・今日の一日を評価して共有する</h3>
+        
+        <div class="post-meta-inputs">
+          <input type="text" id="postAuthorInput" class="post-input" placeholder="ニックネーム（省略可：匿名社畜）" maxlength="20">
+          <input type="text" id="postJobInput" class="post-input" placeholder="職種 / 役職（例：エンジニア、営業、事務...）" maxlength="20">
+        </div>
+
+        <div class="work-rating-row">
+          <span class="work-rating-label" id="squareWorkRatingLabel">自分の仕事に対する自己評価：</span>
+          <div class="work-stars-select" id="workStarsSelect">
+            <span class="work-star" data-rating="1">★</span>
+            <span class="work-star" data-rating="2">★</span>
+            <span class="work-star active" data-rating="3">★</span>
+            <span class="work-star" data-rating="4">★</span>
+            <span class="work-star" data-rating="5">★</span>
+          </div>
+          <span id="workStarText" class="work-star-text">★★★ (3点)</span>
+        </div>
+
+        <textarea id="postContentInput" class="post-textarea" rows="3" maxlength="300" placeholder="仕事に対する本音や評価、悩み、社畜あるあるを書いてみよう（300文字以内）..."></textarea>
+        
+        <div class="post-action-row">
+          <div id="squarePostNotice" class="square-post-notice" style="display: none;"></div>
+          <button id="publishPostBtn" class="btn-primary" style="margin-top: 0; width: auto; min-width: 160px; padding: 10px 24px;">広場に投稿する</button>
+        </div>
       </div>
 
       <div class="square-section">
         <div class="square-controls">
-          <button id="refreshSquareBtn" class="btn-secondary" style="max-width: 240px; margin: 0 0 20px auto;">🔄 最新の投稿を読み込む</button>
+          <button id="refreshSquareBtn" class="btn-secondary">🔄 最新の投稿を読み込む</button>
         </div>
 
         <div id="squareList" class="square-list">
-          <!-- 广场内容会动态加载在这里 -->
+          <!-- 广场动态列表 -->
         </div>
 
         <div id="emptySquare" class="empty-state" style="display: none;">
           <div class="empty-icon">☕</div>
-          <p id="squareEmptyText">まだ広場への投稿がありません。ホームで評価を生成してみましょう！</p>
-          <a href="/" class="btn-primary" style="max-width: 240px; display: inline-block; text-decoration: none;">評価を生成する</a>
+          <p id="squareEmptyText">まだ広場への投稿がありません。最初の投稿をしてみましょう！</p>
         </div>
       </div>
     </main>

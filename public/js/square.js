@@ -2,6 +2,38 @@
 const squareList = document.getElementById('squareList');
 const emptySquare = document.getElementById('emptySquare');
 const refreshSquareBtn = document.getElementById('refreshSquareBtn');
+const publishPostBtn = document.getElementById('publishPostBtn');
+const postAuthorInput = document.getElementById('postAuthorInput');
+const postJobInput = document.getElementById('postJobInput');
+const postContentInput = document.getElementById('postContentInput');
+const squarePostNotice = document.getElementById('squarePostNotice');
+const workStars = document.querySelectorAll('.work-stars-select .work-star');
+const workStarText = document.getElementById('workStarText');
+
+let selectedWorkRating = 3;
+
+// 评分星星交互
+workStars.forEach(star => {
+  star.addEventListener('click', () => {
+    const rating = parseInt(star.dataset.rating, 10);
+    selectedWorkRating = rating;
+    updateWorkStars(rating);
+  });
+});
+
+function updateWorkStars(rating) {
+  workStars.forEach(s => {
+    const r = parseInt(s.dataset.rating, 10);
+    if (r <= rating) {
+      s.classList.add('active');
+    } else {
+      s.classList.remove('active');
+    }
+  });
+  if (workStarText) {
+    workStarText.textContent = `${'★'.repeat(rating)} (${rating}点)`;
+  }
+}
 
 // 已点赞的 ID 列表（保存在本地防止重复刷赞）
 function getLikedIds() {
@@ -22,8 +54,16 @@ function applyLang(lang) {
   applyNavLang(t);
 
   const safe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const safeAttr = (id, attr, val) => { const el = document.getElementById(id); if (el) el[attr] = val; };
+
   safe('squarePageTitle', t.squarePageTitle);
   safe('squarePageSubtitle', t.squarePageSubtitle);
+  safe('squarePublishTitle', t.squarePublishTitle);
+  safeAttr('postAuthorInput', 'placeholder', t.squareAuthorPlaceholder);
+  safeAttr('postJobInput', 'placeholder', t.jobPlaceholder || t.squareJobPlaceholder);
+  safe('squareWorkRatingLabel', t.squareWorkRatingLabel);
+  safeAttr('postContentInput', 'placeholder', t.squareContentPlaceholder);
+  safe('publishPostBtn', publishPostBtn && publishPostBtn.disabled ? t.squarePublishingBtn : t.squarePublishBtn);
   safe('refreshSquareBtn', t.squareRefreshBtn);
   safe('squareEmptyText', t.squareEmpty);
 }
@@ -43,6 +83,53 @@ document.addEventListener('DOMContentLoaded', () => {
 if (refreshSquareBtn) {
   refreshSquareBtn.addEventListener('click', () => {
     loadSquareFeed();
+  });
+}
+
+// 发布我的工作心声
+if (publishPostBtn) {
+  publishPostBtn.addEventListener('click', async () => {
+    const t = i18n[getLang()];
+    const content = postContentInput.value.trim();
+    if (!content) {
+      alert(t.squareReplyEmptyErr || '内容を入力してください');
+      return;
+    }
+
+    publishPostBtn.disabled = true;
+    publishPostBtn.textContent = t.squarePublishingBtn;
+
+    try {
+      const res = await fetch('/api/square/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authorName: postAuthorInput.value.trim(),
+          jobType: postJobInput.value.trim(),
+          content: content,
+          workRating: selectedWorkRating
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        postContentInput.value = '';
+        if (squarePostNotice) {
+          squarePostNotice.textContent = t.squarePostSuccess;
+          squarePostNotice.style.display = 'block';
+          setTimeout(() => { squarePostNotice.style.display = 'none'; }, 4000);
+        }
+        // 重新刷新列表
+        loadSquareFeed();
+      } else {
+        alert(data.error || '投稿に失敗しました');
+      }
+    } catch (err) {
+      console.error('Publish error:', err);
+    } finally {
+      publishPostBtn.disabled = false;
+      publishPostBtn.textContent = t.squarePublishBtn;
+    }
   });
 }
 
@@ -88,26 +175,11 @@ function createSquareItem(item, isLiked) {
   const formattedDate = formatDate(date);
   const t = i18n[getLang()];
 
-  let feedbackHtml = '';
-  const userRating = item.user_rating || item.userRating;
-  const customAnswer = item.user_custom_answer || item.userCustomAnswer;
-
-  if ((userRating && userRating > 0) || (customAnswer && customAnswer.trim() !== '')) {
-    let starsHtml = '';
-    if (userRating && userRating > 0) {
-      starsHtml = `<span class="history-user-rating">${'★'.repeat(userRating)}${'☆'.repeat(5 - userRating)} (${userRating}/5)</span>`;
-    }
-
-    feedbackHtml = `
-      <div class="history-feedback-box">
-        <div class="history-feedback-header">
-          <span class="history-feedback-badge">${t.userFeedbackBadge}</span>
-          ${starsHtml}
-        </div>
-        ${customAnswer ? `<div class="history-custom-answer">💬 ${escapeHtml(customAnswer)}</div>` : ''}
-      </div>
-    `;
-  }
+  const authorName = item.author_name || '匿名社畜';
+  const jobType = item.job_type || item.mode || '社畜';
+  const postContent = item.content || item.input || '';
+  const workRating = item.work_rating || item.rating || 3;
+  const starsHtml = `<span class="post-work-stars">${'★'.repeat(workRating)}${'☆'.repeat(5 - workRating)}</span>`;
 
   const likesCount = item.likes || 0;
   const replies = item.replies || [];
@@ -130,12 +202,15 @@ function createSquareItem(item, isLiked) {
 
   div.innerHTML = `
     <div class="history-header">
-      <span class="mode-badge ${item.mode}">${item.mode}</span>
+      <div class="post-user-info">
+        <span class="post-author-name">👤 ${escapeHtml(authorName)}</span>
+        <span class="post-job-badge">${escapeHtml(jobType)}</span>
+        ${starsHtml}
+      </div>
       <span class="history-date">${formattedDate}</span>
     </div>
-    <div class="history-input">“ ${escapeHtml(item.input)} ”</div>
-    <div class="history-comment">${escapeHtml(item.comment)}</div>
-    ${feedbackHtml}
+
+    <div class="square-post-body">${escapeHtml(postContent)}</div>
     
     <div class="square-item-footer">
       <button class="reply-toggle-btn" data-id="${item.id}">
@@ -210,6 +285,7 @@ function createSquareItem(item, isLiked) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          postId: item.id,
           commentId: item.id,
           nickname: nickInput.value.trim(),
           content: content

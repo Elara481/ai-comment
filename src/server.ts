@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { generateComment } from './commentGenerator';
+import { generateAIComment } from './aiService';
 import { supabase, fallbackFeed, fallbackReplies, FeedItem, ReplyItem } from './supabase';
 
 const app = express();
@@ -33,7 +33,7 @@ app.get('/contact', (req: Request, res: Response) => {
 });
 
 // API エンドポイント
-app.post('/api/generate', (req: Request, res: Response) => {
+app.post('/api/generate', async (req: Request, res: Response) => {
   const { input, mode, lang } = req.body;
 
   // 入力チェック
@@ -58,22 +58,22 @@ app.post('/api/generate', (req: Request, res: Response) => {
   }
 
   try {
-    const result = generateComment(input, mode, lang || 'ja');
+    const result = await generateAIComment(input, mode, lang || 'ja');
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'コメント生成中にエラーが発生しました。' });
   }
 });
 
-// 广场 API：获取最近的吐槽评论（附带匿名盖楼回复）
+// 广场 API：获取工作心声与评价帖子列表（附带他人的匿名盖楼回复）
 app.get('/api/square', async (req: Request, res: Response) => {
   try {
     if (supabase) {
-      const { data: comments, error } = await supabase
-        .from('comments')
+      const { data: posts, error } = await supabase
+        .from('square_posts')
         .select(`
           *,
-          replies (
+          square_replies (
             id,
             nickname,
             content,
@@ -84,30 +84,104 @@ app.get('/api/square', async (req: Request, res: Response) => {
         .limit(50);
 
       if (error) {
-        console.error('Supabase fetch error (trying without relation):', error);
-        // 如果未建 replies 表关联，降级单独查 comments
-        const { data: simpleComments } = await supabase
-          .from('comments')
+        console.error('Supabase square_posts fetch error, trying simple query:', error);
+        const { data: simplePosts, error: simpleErr } = await supabase
+          .from('square_posts')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(50);
-        return res.json(simpleComments || fallbackFeed);
+
+        if (simpleErr) {
+          // 如果 square_posts 尚未建表，尝试回退到旧 comments 表或内存
+          const { data: oldComments } = await supabase
+            .from('comments')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+          return res.json(oldComments || fallbackFeed);
+        }
+        return res.json(simplePosts || fallbackFeed);
       }
-      return res.json(comments || []);
+      
+      // 统一回复字段名 replies
+      const formatted = (posts || []).map((p: any) => ({
+        ...p,
+        replies: p.square_replies || p.replies || []
+      }));
+
+      return res.json(formatted);
     } else {
       return res.json(fallbackFeed);
     }
   } catch (err) {
     console.error('API /api/square error:', err);
-    res.status(500).json({ error: 'Failed to fetch comments' });
+    res.status(500).json({ error: 'Failed to fetch square posts' });
   }
 });
 
-// 广场 API：发表匿名评论/盖楼回复
+// 广场 API：用户发布自己的工作评价/心声吐槽
+app.post('/api/square/post', async (req: Request, res: Response) => {
+  const { authorName, jobType, content, workRating } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: '内容を入力してください / 请输入评价内容' });
+  }
+
+  if (content.length > 300) {
+    return res.status(400).json({ error: '300文字以内で入力してください / 请在300字以内' });
+  }
+
+  const safeAuthor = (authorName && authorName.trim()) ? authorName.trim().substring(0, 20) : '匿名社畜';
+  const safeJob = (jobType && jobType.trim()) ? jobType.trim().substring(0, 20) : '社畜';
+  const safeContent = content.trim();
+  const safeRating = Number(workRating) >= 1 && Number(workRating) <= 5 ? Number(workRating) : 3;
+
+  const newPost: FeedItem = {
+    id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+    author_name: safeAuthor,
+    job_type: safeJob,
+    content: safeContent,
+    work_rating: safeRating,
+    likes: 0,
+    replies: [],
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('square_posts')
+        .insert([{
+          author_name: safeAuthor,
+          job_type: safeJob,
+          content: safeContent,
+          work_rating: safeRating,
+          likes: 0
+        }])
+        .select();
+
+      if (error) {
+        console.error('Supabase square_posts insert error:', error);
+        fallbackFeed.unshift(newPost);
+        if (fallbackFeed.length > 100) fallbackFeed.pop();
+        return res.json(newPost);
+      }
+      return res.json(data && data[0] ? data[0] : newPost);
+    } else {
+      fallbackFeed.unshift(newPost);
+      if (fallbackFeed.length > 100) fallbackFeed.pop();
+      return res.json(newPost);
+    }
+  } catch (err) {
+    console.error('API POST /api/square/post error:', err);
+    res.status(500).json({ error: 'Failed to publish post' });
+  }
+});
+
+// 广场 API：其他用户发表匿名评价/跟帖回复
 app.post('/api/square/reply', async (req: Request, res: Response) => {
-  const { commentId, nickname, content } = req.body;
-  if (!commentId || !content || !content.trim()) {
-    return res.status(400).json({ error: 'Comment ID and content are required' });
+  const { postId, nickname, content } = req.body;
+  if (!postId || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Post ID and content are required' });
   }
 
   const safeNick = (nickname && nickname.trim()) ? nickname.trim().substring(0, 20) : '匿名社畜';
@@ -115,7 +189,7 @@ app.post('/api/square/reply', async (req: Request, res: Response) => {
 
   const newReply: ReplyItem = {
     id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
-    comment_id: commentId,
+    comment_id: postId,
     nickname: safeNick,
     content: safeContent,
     created_at: new Date().toISOString()
@@ -124,23 +198,22 @@ app.post('/api/square/reply', async (req: Request, res: Response) => {
   try {
     if (supabase) {
       const { data, error } = await supabase
-        .from('replies')
+        .from('square_replies')
         .insert([{
-          comment_id: commentId,
+          post_id: postId,
           nickname: safeNick,
           content: safeContent
         }])
         .select();
 
       if (error) {
-        console.error('Supabase reply insert error:', error);
-        // 降级回退
+        console.error('Supabase square_replies insert error:', error);
         fallbackReplies.push(newReply);
         return res.json(newReply);
       }
       return res.json(data && data[0] ? data[0] : newReply);
     } else {
-      const target = fallbackFeed.find(item => item.id === commentId);
+      const target = fallbackFeed.find(item => item.id === postId);
       if (target) {
         if (!target.replies) target.replies = [];
         target.replies.push(newReply);
@@ -154,95 +227,8 @@ app.post('/api/square/reply', async (req: Request, res: Response) => {
   }
 });
 
-// 广场 API：发布或同步一条新生成的评论到广场
-app.post('/api/square', async (req: Request, res: Response) => {
-  const { input, mode, comment, rating } = req.body;
-  if (!input || !comment || !mode) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
 
-  const newItem: FeedItem = {
-    id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
-    input,
-    mode,
-    comment,
-    rating: rating || 3,
-    user_rating: 0,
-    user_custom_answer: '',
-    likes: 0,
-    created_at: new Date().toISOString()
-  };
-
-  try {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([{
-          input: newItem.input,
-          mode: newItem.mode,
-          comment: newItem.comment,
-          rating: newItem.rating,
-          user_rating: newItem.user_rating,
-          user_custom_answer: newItem.user_custom_answer,
-          likes: 0
-        }])
-        .select();
-
-      if (error) {
-        console.error('Supabase insert error:', error);
-        fallbackFeed.unshift(newItem);
-        if (fallbackFeed.length > 100) fallbackFeed.pop();
-        return res.json(newItem);
-      }
-      return res.json(data && data[0] ? data[0] : newItem);
-    } else {
-      fallbackFeed.unshift(newItem);
-      if (fallbackFeed.length > 100) fallbackFeed.pop();
-      return res.json(newItem);
-    }
-  } catch (err) {
-    console.error('API POST /api/square error:', err);
-    res.status(500).json({ error: 'Failed to save comment' });
-  }
-});
-
-// 广场 API：更新某条记录的用户打分或反驳
-app.post('/api/square/feedback', async (req: Request, res: Response) => {
-  const { id, userRating, userCustomAnswer } = req.body;
-  if (!id) {
-    return res.status(400).json({ error: 'ID is required' });
-  }
-
-  try {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('comments')
-        .update({
-          user_rating: userRating,
-          user_custom_answer: userCustomAnswer
-        })
-        .eq('id', id)
-        .select();
-
-      if (error) {
-        console.error('Supabase update feedback error:', error);
-      }
-      return res.json({ success: true, data: data ? data[0] : null });
-    } else {
-      const target = fallbackFeed.find(item => item.id === id);
-      if (target) {
-        target.user_rating = userRating;
-        target.user_custom_answer = userCustomAnswer;
-      }
-      return res.json({ success: true });
-    }
-  } catch (err) {
-    console.error('API POST /api/square/feedback error:', err);
-    res.status(500).json({ error: 'Failed to update feedback' });
-  }
-});
-
-// 广场 API：给某条吐槽点赞
+// 广场 API：给某条工作评价点赞
 app.post('/api/square/like', async (req: Request, res: Response) => {
   const { id } = req.body;
   if (!id) {
@@ -251,26 +237,32 @@ app.post('/api/square/like', async (req: Request, res: Response) => {
 
   try {
     if (supabase) {
-      // 通过 rpc 或 先查后更新
       const { data: item, error: findError } = await supabase
-        .from('comments')
+        .from('square_posts')
         .select('likes')
         .eq('id', id)
         .single();
 
       if (findError || !item) {
+        // 尝试旧表 comments
+        const { data: oldItem } = await supabase.from('comments').select('likes').eq('id', id).single();
+        if (oldItem) {
+          const next = (oldItem.likes || 0) + 1;
+          await supabase.from('comments').update({ likes: next }).eq('id', id);
+          return res.json({ success: true, likes: next });
+        }
         return res.status(404).json({ error: 'Item not found' });
       }
 
       const nextLikes = (item.likes || 0) + 1;
       const { data, error } = await supabase
-        .from('comments')
+        .from('square_posts')
         .update({ likes: nextLikes })
         .eq('id', id)
         .select();
 
       if (error) {
-        console.error('Supabase like error:', error);
+        console.error('Supabase square_posts like error:', error);
         return res.status(500).json({ error: 'Failed to like' });
       }
       return res.json({ success: true, likes: nextLikes });

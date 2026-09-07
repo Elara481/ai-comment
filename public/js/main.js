@@ -1,5 +1,7 @@
 // グローバル変数
 let selectedMode = null;
+let currentResultItem = null;
+let userGivenRating = 0;
 
 // ランダムお題リスト（日本語）
 const randomTopicsJa = [
@@ -49,6 +51,11 @@ const errorMessage = document.getElementById('errorMessage');
 const resultSection = document.getElementById('resultSection');
 const resultMode = document.getElementById('resultMode');
 const resultComment = document.getElementById('resultComment');
+const starButtons = document.querySelectorAll('.interactive-stars .star-btn');
+const starScoreText = document.getElementById('starScoreText');
+const userCustomAnswer = document.getElementById('userCustomAnswer');
+const saveFeedbackBtn = document.getElementById('saveFeedbackBtn');
+const feedbackNotice = document.getElementById('feedbackNotice');
 
 // 应用语言到当前页面
 function applyLang(lang) {
@@ -72,6 +79,12 @@ function applyLang(lang) {
   safe('mode5Name', t.mode5Name); safe('mode5Desc', t.mode5Desc);
   safe('generateBtn', generateBtn.disabled ? t.generatingBtn : t.generateBtn);
   safe('resultTitle', t.resultTitle);
+  safe('feedbackTitle', t.feedbackTitle);
+  safe('ratingLabel', t.ratingLabel);
+  safe('customAnswerPrompt', t.customAnswerPrompt);
+  safeAttr('userCustomAnswer', 'placeholder', t.customAnswerPlaceholder);
+  safe('saveFeedbackBtn', t.saveFeedbackBtn);
+  updateRatingDesc(userGivenRating);
 }
 
 // 初期化
@@ -156,13 +169,19 @@ generateBtn.addEventListener('click', async () => {
 
     displayResult(data);
 
-    saveToHistory({
+    const newHistoryItem = {
+      id: Date.now().toString(),
       input,
       mode: selectedMode,
       comment: data.comment,
       rating: data.rating,
+      userRating: 0,
+      userCustomAnswer: '',
       timestamp: new Date().toISOString()
-    });
+    };
+    currentResultItem = newHistoryItem;
+
+    saveToHistory(newHistoryItem);
 
     hideError();
 
@@ -179,8 +198,100 @@ function displayResult(data) {
   resultMode.textContent = data.mode;
   resultMode.className = 'mode-badge ' + data.mode;
   resultComment.textContent = data.comment;
+  
+  // 重置互动区状态
+  userGivenRating = 0;
+  highlightStars(0);
+  starScoreText.textContent = '';
+  if (userCustomAnswer) userCustomAnswer.value = '';
+  if (feedbackNotice) {
+    feedbackNotice.style.display = 'none';
+    feedbackNotice.textContent = '';
+  }
+
   resultSection.style.display = 'block';
   resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// 互动评分星星逻辑
+starButtons.forEach(star => {
+  star.addEventListener('click', () => {
+    const rating = parseInt(star.dataset.star, 10);
+    userGivenRating = rating;
+    highlightStars(rating);
+    updateRatingDesc(rating);
+  });
+
+  star.addEventListener('mouseenter', () => {
+    const rating = parseInt(star.dataset.star, 10);
+    highlightStars(rating);
+  });
+});
+
+const starsContainer = document.getElementById('interactiveStars');
+if (starsContainer) {
+  starsContainer.addEventListener('mouseleave', () => {
+    highlightStars(userGivenRating);
+  });
+}
+
+function highlightStars(count) {
+  starButtons.forEach(btn => {
+    const s = parseInt(btn.dataset.star, 10);
+    if (s <= count) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+function updateRatingDesc(rating) {
+  if (!starScoreText) return;
+  const t = i18n[getLang()];
+  if (!rating) {
+    starScoreText.textContent = '';
+    return;
+  }
+  const map = {
+    1: t.rating1,
+    2: t.rating2,
+    3: t.rating3,
+    4: t.rating4,
+    5: t.rating5
+  };
+  starScoreText.textContent = map[rating] || '';
+}
+
+// 保存用户互动反馈
+if (saveFeedbackBtn) {
+  saveFeedbackBtn.addEventListener('click', () => {
+    if (!currentResultItem) return;
+    const customText = userCustomAnswer ? userCustomAnswer.value.trim() : '';
+    
+    // 更新当前项
+    currentResultItem.userRating = userGivenRating;
+    currentResultItem.userCustomAnswer = customText;
+
+    updateHistoryFeedback(currentResultItem);
+
+    const t = i18n[getLang()];
+    if (feedbackNotice) {
+      feedbackNotice.textContent = t.feedbackSaved;
+      feedbackNotice.style.display = 'block';
+    }
+  });
+}
+
+function updateHistoryFeedback(updatedItem) {
+  let history = JSON.parse(localStorage.getItem('aiCommentHistory') || '[]');
+  const index = history.findIndex(h => h.id === updatedItem.id || (h.timestamp === updatedItem.timestamp && h.input === updatedItem.input));
+  if (index !== -1) {
+    history[index] = { ...history[index], ...updatedItem };
+  } else {
+    history.unshift(updatedItem);
+  }
+  localStorage.setItem('aiCommentHistory', JSON.stringify(history));
 }
 
 function showError(message) {

@@ -59,6 +59,28 @@ function createHistoryItem(item, index) {
 
   const date = new Date(item.timestamp);
   const formattedDate = formatDate(date);
+  const t = i18n[getLang()];
+
+  let feedbackHtml = '';
+  const hasUserRating = item.userRating && item.userRating > 0;
+  const hasCustomAnswer = item.userCustomAnswer && item.userCustomAnswer.trim() !== '';
+
+  if (hasUserRating || hasCustomAnswer) {
+    let starsHtml = '';
+    if (hasUserRating) {
+      starsHtml = `<span class="history-user-rating">${'★'.repeat(item.userRating)}${'☆'.repeat(5 - item.userRating)} (${item.userRating}/5)</span>`;
+    }
+
+    feedbackHtml = `
+      <div class="history-feedback-box">
+        <div class="history-feedback-header">
+          <span class="history-feedback-badge">${t.userFeedbackBadge}</span>
+          ${starsHtml}
+        </div>
+        ${hasCustomAnswer ? `<div class="history-custom-answer">💬 ${escapeHtml(item.userCustomAnswer)}</div>` : ''}
+      </div>
+    `;
+  }
 
   div.innerHTML = `
     <div class="history-header">
@@ -67,6 +89,7 @@ function createHistoryItem(item, index) {
     </div>
     <div class="history-input">${escapeHtml(item.input)}</div>
     <div class="history-comment">${escapeHtml(item.comment)}</div>
+    ${feedbackHtml}
   `;
 
   return div;

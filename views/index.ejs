@@ -85,6 +85,34 @@
             <span class="mode-badge" id="resultMode"></span>
           </div>
           <div class="result-comment" id="resultComment"></div>
+
+          <!-- 互动评分与自定义反馈区 -->
+          <div class="feedback-section">
+            <hr class="feedback-divider">
+            <h4 class="feedback-title" id="feedbackTitle">この評価はいかがでしたか？</h4>
+            
+            <div class="rating-stars-container">
+              <span class="rating-label" id="ratingLabel">AIの評価に点数をつけてください：</span>
+              <div class="interactive-stars" id="interactiveStars">
+                <span class="star-btn" data-star="1" title="1点">★</span>
+                <span class="star-btn" data-star="2" title="2点">★</span>
+                <span class="star-btn" data-star="3" title="3点">★</span>
+                <span class="star-btn" data-star="4" title="4点">★</span>
+                <span class="star-btn" data-star="5" title="5点">★</span>
+              </div>
+              <span class="star-score-text" id="starScoreText"></span>
+            </div>
+
+            <div class="custom-answer-container">
+              <label for="userCustomAnswer" id="customAnswerPrompt">納得いきませんか？あなたの「理想の回答 / 反論」を書いてみましょう：</label>
+              <textarea id="userCustomAnswer" rows="3" maxlength="200" placeholder="例：いやいや、今日は定時退社したかっただけです！"></textarea>
+            </div>
+
+            <div class="feedback-actions">
+              <button id="saveFeedbackBtn" class="btn-secondary">自分の回答・評価を記録する</button>
+            </div>
+            <div id="feedbackNotice" class="feedback-notice" style="display: none;"></div>
+          </div>
         </div>
       </div>
     </main>

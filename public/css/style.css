@@ -473,6 +473,142 @@ nav {
   white-space: pre-wrap;
 }
 
+/* 互动反馈区样式 */
+.feedback-section {
+  margin-top: 25px;
+}
+
+.feedback-divider {
+  border: 0;
+  height: 1px;
+  background: rgba(0, 212, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.feedback-title {
+  color: #00d4ff;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.rating-stars-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.rating-label {
+  font-size: 14px;
+  color: #b0b0b0;
+}
+
+.interactive-stars {
+  display: inline-flex;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.star-btn {
+  font-size: 26px;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.star-btn:hover,
+.star-btn.active {
+  color: #ffc107;
+  text-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+  transform: scale(1.15);
+}
+
+.star-score-text {
+  font-size: 14px;
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.custom-answer-container {
+  margin-bottom: 15px;
+}
+
+.custom-answer-container label {
+  display: block;
+  font-size: 14px;
+  color: #b0b0b0;
+  margin-bottom: 8px;
+}
+
+.custom-answer-container textarea {
+  width: 100%;
+  padding: 12px;
+  background: rgba(10, 14, 39, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.custom-answer-container textarea:focus {
+  outline: none;
+  border-color: #00d4ff;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.feedback-actions {
+  max-width: 280px;
+}
+
+.feedback-notice {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  color: #81c784;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+
+/* 历史记录里的用户反馈气泡 */
+.history-feedback-box {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: rgba(0, 212, 255, 0.08);
+  border-left: 3px solid #00d4ff;
+  border-radius: 0 8px 8px 0;
+}
+
+.history-feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.history-feedback-badge {
+  font-size: 12px;
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+.history-user-rating {
+  font-size: 13px;
+  color: #ffc107;
+}
+
+.history-custom-answer {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 /* 履歴セクション */
 .history-section {
   margin-top: 30px;

@@ -45,47 +45,39 @@ export async function generateAIComment(
     : (promptsJa[mode] || promptsJa['毒舌AI']);
 
   const userPrompt = lang === 'zh'
-    ? `今日输入：“${input}”。请用60-100字输出简短精辟短评：`
-    : `本日の入力：「${input}」。60〜100文字で簡潔かつ的確なコメントを出力してください：`;
+    ? `用户今日真实经历与心声：“${input}”\n请充分体会用户的语境，以你设定的角色给出幽默、深刻、富有职场灵魂和细节共鸣的精彩长短评（80~150字）：`
+    : `ユーザーの本日の出来事・本音：「${input}」\nユーザーの状況に深く寄り添い、設定されたキャラクターとしての魅力・ユーモア・共感・皮肉を存分に発揮した精彩なコメントを生成してください（80〜150文字）：`;
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-  // 1. 设置极速超时期：若大模型网络延迟超过 3.5 秒，立即无缝返回本地规则，绝不让用户卡顿等待
-  const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), 3500);
-  });
+  // 优先全力调用 Gemini 真实大模型（留足 15 秒思考与生成时间，确保高质量原创回复）
+  try {
+    const model = genAI!.getGenerativeModel({
+      model: 'gemini-3.6-flash',
+      generationConfig: {
+        maxOutputTokens: 250, // 充足的 Token 上限，让大模型自由发挥细节
+        temperature: 0.9,     // 较高的创造力与幽默度
+      }
+    });
 
-  // 2. 直连已验证可用的极速模型 gemini-3.6-flash，削减冗余轮询开销
-  const aiPromise = (async (): Promise<string | null> => {
-    try {
-      const model = genAI!.getGenerativeModel({
-        model: 'gemini-3.6-flash',
-        generationConfig: {
-          maxOutputTokens: 100, // 进一步缩减至 100 tokens（精炼短评，极速出字）
-          temperature: 0.75,
-        }
-      });
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      return response.text().trim() || null;
-    } catch (e) {
-      return null;
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const text = response.text().trim();
+
+    if (text) {
+      console.log(`🧠 [Gemini LLM High-Quality Generated] Mode: ${mode}, Length: ${text.length}`);
+      const baseResult = generateRuleComment(input, mode, lang);
+      return {
+        comment: text,
+        rating: baseResult.rating,
+        mode: mode
+      };
     }
-  })();
-
-  const text = await Promise.race([aiPromise, timeoutPromise]);
-
-  const baseResult = generateRuleComment(input, mode, lang);
-
-  if (text) {
-    console.log(`⚡ [Fast AI Generated] Mode: ${mode}`);
-    return {
-      comment: text,
-      rating: baseResult.rating,
-      mode: mode
-    };
+  } catch (error: any) {
+    console.error('❌ Gemini API call error:', error?.message || error);
   }
 
-  console.warn('⚡ Fallback to instant local rule engine for speed.');
-  return baseResult;
+  // 仅在网络彻底断开或 API 故障时作为最后的兜底
+  console.warn('⚠️ Fallback to local rule engine due to API unavailability.');
+  return generateRuleComment(input, mode, lang);
 }

@@ -41,6 +41,7 @@ export async function generateAIComment(
   }
 
   try {
+    // 优先尝试 gemini-1.5-flash / gemini-2.0-flash
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const systemPrompt = lang === 'zh'
@@ -58,8 +59,11 @@ export async function generateAIComment(
     const text = response.text().trim();
 
     if (!text) {
+      console.warn('Gemini returned empty response. Fallback to rule engine.');
       return generateRuleComment(input, mode, lang);
     }
+
+    console.log(`✨ [Real AI Generated] Mode: ${mode}, Length: ${text.length}`);
 
     // 基础星级根据本地规则计算
     const baseResult = generateRuleComment(input, mode, lang);
@@ -69,8 +73,8 @@ export async function generateAIComment(
       rating: baseResult.rating,
       mode: mode
     };
-  } catch (error) {
-    console.error('Gemini API call failed, falling back to rule engine:', error);
+  } catch (error: any) {
+    console.error('❌ Gemini API call failed, falling back to rule engine:', error?.message || error);
     return generateRuleComment(input, mode, lang);
   }
 }

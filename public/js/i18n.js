@@ -53,6 +53,11 @@ const i18n = {
     squareEmpty: 'まだ広場への投稿がありません。ホームで評価を生成してみましょう！',
     squareLikeBtn: '👍 共感する',
     squareLikedBtn: '❤️ 共感済み',
+    squareReplyToggle: (count) => `💬 匿名コメント (${count})`,
+    squareReplyPlaceholder: '匿名でコメントや共感を残す...（200文字以内）',
+    squareNickPlaceholder: 'ニックネーム（省略可：匿名社畜）',
+    squareReplySubmit: '送信する',
+    squareReplyEmptyErr: 'コメント内容を入力してください。',
     // contact
     contactPageTitle: 'お問い合わせ',
     contactPageSubtitle: 'ご意見・ご要望をお聞かせください',
@@ -119,6 +124,11 @@ const i18n = {
     squareEmpty: '广场上还没有内容，快去首页生成第一个评价吧！',
     squareLikeBtn: '👍 共鸣/点赞',
     squareLikedBtn: '❤️ 已点赞',
+    squareReplyToggle: (count) => `💬 匿名评论 (${count})`,
+    squareReplyPlaceholder: '写下你的匿名吐槽、安慰或神评论...（200字以内）',
+    squareNickPlaceholder: '昵称（选填，默认：匿名打工人）',
+    squareReplySubmit: '发送评论',
+    squareReplyEmptyErr: '请输入评论内容。',
     // contact
     contactPageTitle: '联系我们',
     contactPageSubtitle: '欢迎提出您的意见与建议',

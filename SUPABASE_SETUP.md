@@ -36,6 +36,19 @@ ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read" ON comments FOR SELECT USING (true);
 CREATE POLICY "Allow public insert" ON comments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update" ON comments FOR UPDATE USING (true);
+
+-- 创建 replies（匿名盖楼回复表）
+CREATE TABLE IF NOT EXISTS replies (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  nickname VARCHAR(50) DEFAULT '匿名社畜',
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE replies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read replies" ON replies FOR SELECT USING (true);
+CREATE POLICY "Allow public insert replies" ON replies FOR INSERT WITH CHECK (true);
 ```
 
 ---

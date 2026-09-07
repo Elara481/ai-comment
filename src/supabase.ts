@@ -17,6 +17,15 @@ if (supabaseUrl && supabaseKey) {
 
 export { supabase };
 
+// 匿名回复评论接口
+export interface ReplyItem {
+  id: string;
+  comment_id: string;
+  nickname?: string;
+  content: string;
+  created_at: string;
+}
+
 // 内存后备存储（若用户未配置 Supabase 环境变量，依然可正常体验广场）
 export interface FeedItem {
   id: string;
@@ -27,7 +36,9 @@ export interface FeedItem {
   user_rating?: number;
   user_custom_answer?: string;
   likes?: number;
+  replies?: ReplyItem[];
   created_at: string;
 }
 
 export const fallbackFeed: FeedItem[] = [];
+export const fallbackReplies: ReplyItem[] = [];

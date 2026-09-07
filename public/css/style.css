@@ -637,9 +637,118 @@ nav {
 .square-item-footer {
   margin-top: 15px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 10px;
+  padding-top: 12px;
+}
+
+.reply-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: #00d4ff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.reply-toggle-btn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: #00d4ff;
+}
+
+.square-replies-drawer {
+  margin-top: 15px;
+  background: rgba(10, 14, 39, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 10px;
+  padding: 15px;
+  animation: slideIn 0.3s ease;
+}
+
+.replies-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.reply-bubble {
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #ff9800;
+  border-radius: 0 6px 6px 0;
+  padding: 8px 12px;
+}
+
+.reply-bubble-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.reply-nick {
+  font-size: 12px;
+  color: #ff9800;
+  font-weight: bold;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: #718096;
+}
+
+.reply-bubble-content {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.reply-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.reply-nickname-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(10, 14, 39, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+
+.reply-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(10, 14, 39, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.reply-nickname-input:focus,
+.reply-textarea:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.reply-submit-btn {
+  align-self: flex-end;
+  padding: 6px 16px;
+  font-size: 13px;
+  margin-top: 0;
+  width: auto;
 }
 
 .like-btn {

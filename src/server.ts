@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { generateComment } from './commentGenerator';
-import { supabase, fallbackFeed, FeedItem } from './supabase';
+import { supabase, fallbackFeed, fallbackReplies, FeedItem, ReplyItem } from './supabase';
 
 const app = express();
 const PORT = process.env.PORT || 8091;
@@ -65,27 +65,92 @@ app.post('/api/generate', (req: Request, res: Response) => {
   }
 });
 
-// 广场 API：获取最近的吐槽评论
+// 广场 API：获取最近的吐槽评论（附带匿名盖楼回复）
 app.get('/api/square', async (req: Request, res: Response) => {
   try {
     if (supabase) {
-      const { data, error } = await supabase
+      const { data: comments, error } = await supabase
         .from('comments')
-        .select('*')
+        .select(`
+          *,
+          replies (
+            id,
+            nickname,
+            content,
+            created_at
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) {
-        console.error('Supabase fetch error:', error);
-        return res.json(fallbackFeed);
+        console.error('Supabase fetch error (trying without relation):', error);
+        // 如果未建 replies 表关联，降级单独查 comments
+        const { data: simpleComments } = await supabase
+          .from('comments')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        return res.json(simpleComments || fallbackFeed);
       }
-      return res.json(data || []);
+      return res.json(comments || []);
     } else {
       return res.json(fallbackFeed);
     }
   } catch (err) {
     console.error('API /api/square error:', err);
     res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// 广场 API：发表匿名评论/盖楼回复
+app.post('/api/square/reply', async (req: Request, res: Response) => {
+  const { commentId, nickname, content } = req.body;
+  if (!commentId || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Comment ID and content are required' });
+  }
+
+  const safeNick = (nickname && nickname.trim()) ? nickname.trim().substring(0, 20) : '匿名社畜';
+  const safeContent = content.trim().substring(0, 200);
+
+  const newReply: ReplyItem = {
+    id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+    comment_id: commentId,
+    nickname: safeNick,
+    content: safeContent,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('replies')
+        .insert([{
+          comment_id: commentId,
+          nickname: safeNick,
+          content: safeContent
+        }])
+        .select();
+
+      if (error) {
+        console.error('Supabase reply insert error:', error);
+        // 降级回退
+        fallbackReplies.push(newReply);
+        return res.json(newReply);
+      }
+      return res.json(data && data[0] ? data[0] : newReply);
+    } else {
+      const target = fallbackFeed.find(item => item.id === commentId);
+      if (target) {
+        if (!target.replies) target.replies = [];
+        target.replies.push(newReply);
+      }
+      fallbackReplies.push(newReply);
+      return res.json(newReply);
+    }
+  } catch (err) {
+    console.error('API POST /api/square/reply error:', err);
+    res.status(500).json({ error: 'Failed to save reply' });
   }
 });
 

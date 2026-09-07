@@ -50,7 +50,7 @@ export async function generateAIComment(
 
   try {
     const model = genAI!.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.6-flash',
       systemInstruction: systemInstruction, // 使用官方规范的 systemInstruction 隔离系统人设
       generationConfig: {
         maxOutputTokens: 600,

@@ -609,6 +609,67 @@ nav {
   white-space: pre-wrap;
 }
 
+/* 广场样式 */
+.square-section {
+  margin-top: 30px;
+}
+
+.square-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.square-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.square-item {
+  background: rgba(26, 31, 58, 0.85);
+  border: 2px solid rgba(0, 212, 255, 0.25);
+  border-radius: 15px;
+  padding: 22px;
+  animation: slideIn 0.4s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.square-item-footer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 10px;
+}
+
+.like-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  color: #ffc107;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.like-btn:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: #ffc107;
+  transform: translateY(-2px);
+}
+
+.like-btn.liked {
+  background: rgba(233, 30, 99, 0.15);
+  border-color: #e91e63;
+  color: #f06292;
+  cursor: default;
+}
+
 /* 履歴セクション */
 .history-section {
   margin-top: 30px;

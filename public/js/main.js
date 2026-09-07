@@ -181,6 +181,26 @@ generateBtn.addEventListener('click', async () => {
     };
     currentResultItem = newHistoryItem;
 
+    // 同步上报到公共广场
+    try {
+      fetch('/api/square', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input,
+          mode: selectedMode,
+          comment: data.comment,
+          rating: data.rating
+        })
+      }).then(r => r.json()).then(saved => {
+        if (saved && saved.id) {
+          currentResultItem.id = saved.id;
+        }
+      }).catch(e => console.log('Square sync notice:', e));
+    } catch (e) {
+      console.log('Square sync ignore');
+    }
+
     saveToHistory(newHistoryItem);
 
     hideError();
@@ -272,6 +292,19 @@ if (saveFeedbackBtn) {
     // 更新当前项
     currentResultItem.userRating = userGivenRating;
     currentResultItem.userCustomAnswer = customText;
+
+    // 同步更新到公共广场
+    if (currentResultItem.id) {
+      fetch('/api/square/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentResultItem.id,
+          userRating: userGivenRating,
+          userCustomAnswer: customText
+        })
+      }).catch(e => console.log('Feedback square sync error:', e));
+    }
 
     updateHistoryFeedback(currentResultItem);
 

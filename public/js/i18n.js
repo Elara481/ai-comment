@@ -4,6 +4,7 @@ const i18n = {
     siteTitle: 'AI社畜評論家',
     siteSubtitle: 'あなたの今日を、AIが容赦なく評価します。',
     navHome: 'ホーム',
+    navSquare: '社畜広場',
     navHistory: '履歴',
     navContact: 'お問い合わせ',
     inputLabel: '今日の出来事を入力してください（200文字以内）',
@@ -45,6 +46,13 @@ const i18n = {
     histEmpty: 'まだ評価履歴がありません',
     histGoHome: '評価を生成する',
     histConfirm: 'すべての履歴を削除しますか？この操作は取り消せません。',
+    // square
+    squarePageTitle: '社畜広場 🏢',
+    squarePageSubtitle: 'みんなの日常とAIの容赦ない評価・魂の反論をのぞいてみよう！',
+    squareRefreshBtn: '🔄 最新の投稿を読み込む',
+    squareEmpty: 'まだ広場への投稿がありません。ホームで評価を生成してみましょう！',
+    squareLikeBtn: '👍 共感する',
+    squareLikedBtn: '❤️ 共感済み',
     // contact
     contactPageTitle: 'お問い合わせ',
     contactPageSubtitle: 'ご意見・ご要望をお聞かせください',
@@ -62,6 +70,7 @@ const i18n = {
     siteTitle: 'AI打工人评论家',
     siteSubtitle: '你的今天，由AI毫不留情地评价。',
     navHome: '首页',
+    navSquare: '吐槽广场',
     navHistory: '历史记录',
     navContact: '联系我们',
     inputLabel: '请输入今天发生的事情（200字以内）',
@@ -103,6 +112,13 @@ const i18n = {
     histEmpty: '暂无历史记录',
     histGoHome: '去生成评价',
     histConfirm: '确定要清空全部历史记录吗？此操作不可撤销。',
+    // square
+    squarePageTitle: '打工人广场 🏢',
+    squarePageSubtitle: '围观各路打工人的日常、AI的毒舌辣评与灵魂反驳！',
+    squareRefreshBtn: '🔄 刷新最新动态',
+    squareEmpty: '广场上还没有内容，快去首页生成第一个评价吧！',
+    squareLikeBtn: '👍 共鸣/点赞',
+    squareLikedBtn: '❤️ 已点赞',
     // contact
     contactPageTitle: '联系我们',
     contactPageSubtitle: '欢迎提出您的意见与建议',
@@ -132,6 +148,7 @@ function applyNavLang(t) {
   const safe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   safe('navLogo', t.siteTitle);
   safe('navHome', t.navHome);
+  safe('navSquare', t.navSquare);
   safe('navHistory', t.navHistory);
   safe('navContact', t.navContact);
   safe('footerText', t.footer);

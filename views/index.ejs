@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <nav>
+        <div class="logo" id="navLogo">AI社畜評論家</div>
+        <ul class="nav-links">
+          <li><a href="/" class="active" id="navHome">ホーム</a></li>
+          <li><a href="/history" id="navHistory">履歴</a></li>
+          <li><a href="/contact" id="navContact">お問い合わせ</a></li>
+        </ul>
+        <div class="lang-switcher">
+          <button id="langJa" class="lang-btn active">日本語</button>
+          <button id="langZh" class="lang-btn">中文</button>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1 class="title" id="siteTitle">AI社畜評論家</h1>
+        <p class="subtitle" id="siteSubtitle">あなたの今日を、AIが容赦なく評価します。</p>
+      </div>
+
+      <div class="input-section">
+        <div class="input-group">
+          <label for="userInput" id="inputLabel">今日の出来事を入力してください（200文字以内）</label>
+          <textarea
+            id="userInput"
+            placeholder="例：今日はJavaを勉強しました"
+            maxlength="200"
+          ></textarea>
+          <div class="char-count">
+            <span id="charCount">0</span> <span id="charLimit">/ 200文字</span>
+          </div>
+          <button id="randomTopicBtn" class="btn-secondary">今日のお題</button>
+        </div>
+
+        <div class="mode-selection">
+          <h3 id="modeTitle">AIモードを選択</h3>
+          <div class="mode-cards">
+            <div class="mode-card" data-mode="毒舌AI">
+              <div class="mode-icon">😈</div>
+              <div class="mode-name" id="mode1Name">毒舌AI</div>
+              <div class="mode-desc" id="mode1Desc">辛口で少し意地悪</div>
+            </div>
+            <div class="mode-card" data-mode="優しいAI">
+              <div class="mode-icon">😊</div>
+              <div class="mode-name" id="mode2Name">優しいAI</div>
+              <div class="mode-desc" id="mode2Desc">肯定的で励ます</div>
+            </div>
+            <div class="mode-card" data-mode="上司AI">
+              <div class="mode-icon">👔</div>
+              <div class="mode-name" id="mode3Name">上司AI</div>
+              <div class="mode-desc" id="mode3Desc">ビジネス風評価</div>
+            </div>
+            <div class="mode-card" data-mode="同期AI">
+              <div class="mode-icon">🤝</div>
+              <div class="mode-name" id="mode4Name">同期AI</div>
+              <div class="mode-desc" id="mode4Desc">友達っぽく共感</div>
+            </div>
+            <div class="mode-card" data-mode="限界社畜AI">
+              <div class="mode-icon">😵</div>
+              <div class="mode-name" id="mode5Name">限界社畜AI</div>
+              <div class="mode-desc" id="mode5Desc">疲れ切った目線</div>
+            </div>
+          </div>
+        </div>
+
+        <button id="generateBtn" class="btn-primary">評価を生成</button>
+        <div id="errorMessage" class="error-message"></div>
+      </div>
+
+      <div id="resultSection" class="result-section" style="display: none;">
+        <h3 id="resultTitle">評価結果</h3>
+        <div class="result-card">
+          <div class="result-mode">
+            <span class="mode-badge" id="resultMode"></span>
+          </div>
+          <div class="result-comment" id="resultComment"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p id="footerText">&copy; 2026 AI社畜評論家. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script src="/js/i18n.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>

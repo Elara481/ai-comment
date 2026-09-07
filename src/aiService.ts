@@ -55,8 +55,8 @@ export async function generateAIComment(
     const model = genAI!.getGenerativeModel({
       model: 'gemini-3.6-flash',
       generationConfig: {
-        maxOutputTokens: 250, // 充足的 Token 上限，让大模型自由发挥细节
-        temperature: 0.9,     // 较高的创造力与幽默度
+        maxOutputTokens: 1000, // 给足 Token，确保完整表达、绝不断句截断
+        temperature: 0.85,
       }
     });
 
